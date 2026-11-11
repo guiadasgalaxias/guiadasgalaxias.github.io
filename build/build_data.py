@@ -167,6 +167,8 @@ def cadastur(por_nome: dict[str, int], sedes: dict[int, tuple[float, float]], ex
     linhas = openpyxl.load_workbook(arquivo, read_only=True).worksheets[0].iter_rows(values_only=True)
     col = {nome: i for i, nome in enumerate(next(linhas))}
     do_osm = {(l["m"], miolo(l["n"])): l for l in existentes if l["t"] == "hotel" and miolo(l["n"])}
+    cache = ROOT / "build" / "geocode_cache.json"
+    geocodificados = json.loads(cache.read_text(encoding="utf-8")) if cache.exists() else {}
     novos, completados, vistos = [], 0, set()
     for r in linhas:
         if r[col["UF"]] != "PR" or r[col["Situação da Atividade"]] != "Operação" or r[col["Tipo de Hospedagem"]] in FORA_DA_DIARIA:
@@ -193,10 +195,26 @@ def cadastur(por_nome: dict[str, int], sedes: dict[int, tuple[float, float]], ex
         if ident in vistos:
             continue
         vistos.add(ident)
-        lat, lon = sedes[codigo]
-        novos.append({"id": ident, "t": "hotel", "n": nome, "m": codigo, **contato, "lat": lat, "lon": lon, "src": "cadastur", "ap": 1})
+        ponto = geocodificados.get(ident)  # build/geocode.py; sem resultado, fica na sede como local aproximado
+        lat, lon = ponto or sedes[codigo]
+        novos.append({"id": ident, "t": "hotel", "n": nome, "m": codigo, **contato, "lat": lat, "lon": lon, "src": "cadastur",
+                      **({} if ponto else {"ap": 1})})
     print(f"cadastur: {len(novos)} hotéis novos, {completados} do OSM ganharam contato")
     return novos
+
+
+def manuais(sedes: dict[int, tuple[float, float]]) -> list[dict]:
+    """Lugares indicados por colegas fora do formulário (build/manuais.json). Sem lat/lon, ficam na sede."""
+    arquivo = ROOT / "build" / "manuais.json"
+    if not arquivo.exists():
+        return []
+    saida = []
+    for item in json.loads(arquivo.read_text(encoding="utf-8")):
+        assert item["m"] in sedes and item["t"] in ("hotel", "rest", "posto"), f"manual inválido: {item}"
+        sem_ponto = "lat" not in item
+        lat, lon = (item["lat"], item["lon"]) if not sem_ponto else sedes[item["m"]]
+        saida.append({**item, "lat": lat, "lon": lon, "src": "colega", **({"ap": 1} if sem_ponto else {})})
+    return saida
 
 
 def main() -> int:
@@ -211,7 +229,7 @@ def main() -> int:
     sedes = {m["c"]: (m["lat"], m["lon"]) for m in municipios}
     lista_postos, problemas = postos(por_nome, sedes)
     do_osm = osm(municipios, por_nome)
-    lugares = lista_postos + do_osm + cadastur(por_nome, sedes, do_osm)
+    lugares = lista_postos + do_osm + cadastur(por_nome, sedes, do_osm) + manuais(sedes)
     lugares = [l for l in lugares if l["n"].strip()]  # sem nome não dá para indicar
     assert len({l["id"] for l in lugares}) == len(lugares), "ids duplicados"
 
