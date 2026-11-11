@@ -19,7 +19,7 @@ MIRRORS = [
 QUERY = """[out:json][timeout:170];
 area["ISO3166-2"="BR-PR"]->.a;
 (
-  nwr["tourism"~"^(hotel|motel|guest_house|hostel)$"]["name"](area.a);
+  nwr["tourism"~"^(hotel|guest_house|hostel)$"]["name"](area.a);
   nwr["amenity"="restaurant"]["name"](area.a);
 );
 out center tags;"""

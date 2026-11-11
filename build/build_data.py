@@ -30,7 +30,7 @@ OUT = ROOT / "data"
 UF_PR = "41"
 PR_BBOX = (-26.8, -22.4, -54.7, -48.0)  # lat_min, lat_max, lon_min, lon_max
 MINUSCULAS = {"de", "da", "do", "das", "dos", "e", "em", "a", "o"}
-OSM_TIPO = {"hotel": "hotel", "motel": "hotel", "guest_house": "hotel", "hostel": "hotel"}
+OSM_TIPO = {"hotel": "hotel", "guest_house": "hotel", "hostel": "hotel"}  # motel fica de fora de propósito
 GENERICAS = frozenset("HOTEL HOTEIS POUSADA LTDA ME EIRELI E DE DA DO DAS DOS S A EPP".split())
 FORA_DA_DIARIA = {"Resort", "Alojamento de Floresta"}
 
@@ -231,6 +231,7 @@ def main() -> int:
     do_osm = osm(municipios, por_nome)
     lugares = lista_postos + do_osm + cadastur(por_nome, sedes, do_osm) + manuais(sedes)
     lugares = [l for l in lugares if l["n"].strip()]  # sem nome não dá para indicar
+    lugares = [l for l in lugares if not re.search(r"\bmot[eé]l\b", l["n"], re.I)]  # motel não é parada de viagem a serviço
     assert len({l["id"] for l in lugares}) == len(lugares), "ids duplicados"
 
     OUT.mkdir(exist_ok=True)
