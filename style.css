@@ -164,7 +164,7 @@ dialog fieldset.estrelas { display: flex; gap: 4px; border: 0; padding: 0; }
 .lugar blockquote { margin: 6px 0; padding: 6px 10px; border-left: var(--px) solid var(--ceu); }
 
 .vazio { background: var(--nebulosa); padding: 20px 16px; margin-top: 16px; clip-path: var(--pixel); display: grid; grid-template-columns: 64px 1fr; gap: 6px 14px; align-items: center; }
-.vazio img { width: 64px; height: 64px; grid-row: span 2; }
+.vazio img { width: 56px; height: 56px; grid-row: span 2; }
 .vazio h2 { margin: 0; font-family: var(--titulo); font-size: 1.25rem; color: var(--estrela); }
 .vazio p { margin: 0; }
 .vazio .botao { grid-column: 1 / -1; margin-top: 8px; }
