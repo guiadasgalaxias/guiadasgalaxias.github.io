@@ -136,38 +136,16 @@
     <h2 id="t-confirmar">Confirmar parada</h2>
     <p class="sub" data-alvo></p>
     <input type="hidden" name="id">
-    <p>Confirme se você já usou. Cada colega conta uma vez, e os lugares mais confirmados sobem na lista.</p>
+    <p>Conte como foi. Cada colega conta uma vez, e os lugares mais confirmados sobem na lista.</p>
+    <label class="campo"><span>Data da hospedagem ou visita</span><input name="data" type="date" required></label>
     <fieldset class="estrelas" data-estrelas><legend>Sua nota</legend></fieldset>
     <label class="campo"><span>Comentário (aparece no site, sem seu nome; não cite pessoas)</span><textarea name="comentario" rows="3" maxlength="500" placeholder="Ex.: quarto limpo, café bom, aceita faturar"></textarea></label>
     <label class="marcar" data-so-hotel><input type="checkbox" name="ok" value="1"> O valor coube na diária</label>
+    <label class="marcar"><input type="checkbox" name="remover" value="1"> Experiência ruim: recomendo remover do guia</label>
     <label class="campo"><span>Seu nome (não aparece no site)</span><input name="autor" required maxlength="80" autocomplete="name"></label>
     <label class="pote" aria-hidden="true">Não preencha<input name="site" tabindex="-1" autocomplete="off"></label>
     <p class="retorno" role="status" hidden></p>
     <div class="botoes"><button class="botao" type="button" data-fechar>Cancelar</button><button class="botao cheio" type="submit">Confirmar parada</button></div>
-  </form>
-</dialog>
-
-<!-- Avaliar -->
-<dialog id="dlg-avaliar" aria-labelledby="t-avaliar">
-  <form method="dialog" data-tipo="avaliacao">
-    <h2 id="t-avaliar">Avaliar</h2>
-    <p class="sub" data-alvo></p>
-    <input type="hidden" name="id">
-    <label class="campo"><span>Seu nome</span><input name="autor" required maxlength="80" autocomplete="name"></label>
-    <label class="campo"><span>Data da hospedagem ou visita</span><input name="data" type="date" required></label>
-    <fieldset>
-      <legend>Notas de 1 (ruim) a 5 (ótimo)</legend>
-      <label class="nota">Limpeza<select name="limpeza" required><option value="">–</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select></label>
-      <label class="nota">Atendimento<select name="atendimento" required><option value="">–</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select></label>
-      <label class="nota">Conforto e qualidade<select name="conforto" required><option value="">–</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select></label>
-      <label class="nota">Preço<select name="preco" required><option value="">–</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select></label>
-    </fieldset>
-    <label class="marcar"><input type="checkbox" name="ok" value="1"> O valor coube na diária</label>
-    <label class="campo"><span>Comentário (aparece no site, sem seu nome; não cite pessoas)</span><textarea name="comentario" rows="3" maxlength="500"></textarea></label>
-    <label class="marcar"><input type="checkbox" name="remover" value="1"> Experiência ruim: recomendo remover do guia</label>
-    <label class="pote" aria-hidden="true">Não preencha<input name="site" tabindex="-1" autocomplete="off"></label>
-    <p class="retorno" role="status" hidden></p>
-    <div class="botoes"><button class="botao" type="button" data-fechar>Cancelar</button><button class="botao cheio" type="submit">Enviar avaliação</button></div>
   </form>
 </dialog>
 

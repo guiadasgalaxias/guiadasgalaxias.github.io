@@ -17,7 +17,7 @@ const ABAS = {
   lugares: ["quando", "status", "id", "t", "n", "e", "m", "tel", "wa", "email", "ok", "valor", "almoco", "jantar", "lat", "lon", "proximos", "autor", "nota", "comentario"],
   avaliacoes: ["quando", "status", "id", "autor", "data", "limpeza", "atendimento", "conforto", "preco", "ok", "comentario", "remover"],
   correcoes: ["quando", "status", "id", "texto", "autor"],
-  confirmacoes: ["quando", "status", "id", "autor", "ok", "nota", "comentario"],
+  confirmacoes: ["quando", "status", "id", "autor", "ok", "nota", "comentario", "data", "remover"],
   vinculos: ["quando", "status", "m_a", "m_b", "autor"],
 };
 const TIPOS = ["hotel", "rest", "posto"];
@@ -112,7 +112,8 @@ function doGet() {
     confirmacoes.forEach((c) => {
       const quem = c.id + "|" + String(c.autor).trim().toLowerCase();
       const item = confirma[c.id] || (confirma[c.id] = { n: 0, ok: false });
-      if (!jaContou[quem]) { jaContou[quem] = true; item.n += 1; }
+      // Quem pede a remoção deixa nota e comentário, mas não soma como confirmação.
+      if (!jaContou[quem] && c.remover !== "SIM") { jaContou[quem] = true; item.n += 1; }
       item.ok = item.ok || eSim(c.ok);
     });
 
@@ -169,7 +170,9 @@ function doPost(e) {
       const id = limpa(d.id, 40);
       if (!/^[a-z0-9]+$/i.test(id)) throw new Error("lugar inválido");
       aba = "confirmacoes";
-      registro = { quando, status: "aprovado", id, autor, ok: d.ok ? 1 : "", nota: d.nota ? nota(d.nota) : "", comentario: limpa(d.comentario, 500) };
+      const data = /^\d{4}-\d{2}-\d{2}$/.test(d.data) && new Date(d.data) <= agora ? d.data : "";
+      registro = { quando, status: "aprovado", id, autor, ok: d.ok ? 1 : "", nota: d.nota ? nota(d.nota) : "", comentario: limpa(d.comentario, 500),
+        data, remover: d.remover ? "SIM" : "" };
     } else if (d.tipo === "correcao") {
       const id = limpa(d.id, 40);
       const texto = limpa(d.texto, 600);

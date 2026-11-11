@@ -148,7 +148,6 @@
         l.email && el("a", { href: `mailto:${l.email}` }, "E-mail"),
         el("a", { href: rota, target: "_blank", rel: "noopener" }, "Rota"),
         el("button", { type: "button", onclick: () => abre("confirmar", l) }, "Confirmar"),
-        el("button", { type: "button", onclick: () => abre("avaliar", l) }, "Avaliar"),
         el("button", { type: "button", onclick: () => abre("corrigir", l) }, "Corrigir")),
       // Até 2 comentários já aparecem abertos; acima disso ficam recolhidos para a lista não esticar.
       nota && nota.comentarios.length > 0 && el("details", { open: nota.comentarios.length <= 2 ? "" : null },
@@ -254,7 +253,7 @@
 
   const RECEBIDO = {
     lugar: "Transmissão recebida. Já está no guia, e outros colegas podem confirmar.",
-    confirmacao: "Confirmação registrada. Valeu por ajudar os colegas.",
+    confirmacao: "Registrado. Valeu por ajudar os colegas.",
     avaliacao: "Transmissão recebida. Aparece no guia depois que um colega mantenedor conferir.",
     correcao: "Transmissão recebida. Um colega mantenedor vai conferir e corrigir.",
   };

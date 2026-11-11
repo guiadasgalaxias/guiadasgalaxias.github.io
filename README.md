@@ -51,9 +51,9 @@ Cole a URL `/exec` em `config.js`.
 | Aba | O que fazer |
 |---|---|
 | `lugares` | Entra como `aprovado`. Trocar para `rejeitado` tira do site. Linha com o `id` de um lugar e `status` = `removido` tira da lista. Preencher `lat`/`lon` posiciona no mapa. |
-| `avaliacoes` | `aprovado` publica nota e comentário. Coluna `remover` = `SIM` é pedido de remoção. |
+| `avaliacoes` | Formulário antigo, não aparece mais no site. As linhas aprovadas continuam contando na nota. |
 | `correcoes` | Ler, aplicar na aba `lugares` (linha com o mesmo `id`), marcar `aprovado`. |
-| `confirmacoes` | Entra como `aprovado`. Trocar para `rejeitado` desconta a confirmação. |
+| `confirmacoes` | Entra como `aprovado`, com nota, comentário e data. Trocar para `rejeitado` desconta. Coluna `remover` = `SIM` é pedido de remoção: vale a nota, não soma como confirmação. |
 | `vinculos` | Par de códigos IBGE (`m_a`, `m_b`) que vale como "próximo" mesmo fora do raio. |
 
 ## Créditos
