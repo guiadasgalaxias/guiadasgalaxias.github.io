@@ -155,9 +155,13 @@ function doPost(e) {
       if (!n || !end || !tel) throw new Error("nome, endereço e telefone com DDD são obrigatórios");
       if (!wa && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) throw new Error("informe WhatsApp ou e-mail");
       if (d.t === "hotel" && !d.ok) throw new Error("só entram hotéis cujo valor cabe na diária");
+      // Ponto marcado no mapa do formulário (opcional): só vale dentro do Paraná; sem ele o site usa a sede.
+      const lat = Number(d.lat), lon = Number(d.lon);
+      const temPonto = d.lat !== "" && d.lat != null && lat > -26.8 && lat < -22.4 && lon > -54.7 && lon < -48.0;
       aba = "lugares";
       registro = { quando, status: "aprovado", id: "c" + Utilities.getUuid().slice(0, 8), t: d.t, n, e: end, m, tel, wa, email,
-        ok: d.ok ? 1 : "", valor: limpa(d.valor, 12), almoco: d.almoco ? 1 : "", jantar: d.jantar ? 1 : "", proximos: limpa(d.proximos, 200), autor,
+        ok: d.ok ? 1 : "", valor: limpa(d.valor, 12), almoco: d.almoco ? 1 : "", jantar: d.jantar ? 1 : "",
+        lat: temPonto ? Math.round(lat * 1e6) / 1e6 : "", lon: temPonto ? Math.round(lon * 1e6) / 1e6 : "", proximos: limpa(d.proximos, 200), autor,
         nota: d.nota ? nota(d.nota) : "", comentario: limpa(d.comentario, 500) };
     } else if (d.tipo === "avaliacao") {
       const id = limpa(d.id, 40);

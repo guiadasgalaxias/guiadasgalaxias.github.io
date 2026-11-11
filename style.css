@@ -208,6 +208,8 @@ dialog form { display: grid; gap: 12px; padding: 18px 16px calc(18px + env(safe-
 dialog h2 { margin: 0; font-family: var(--titulo); font-size: 1.5rem; font-weight: 700; }
 dialog .sub { margin: -6px 0 0; font-size: 0.875rem; color: var(--cinza); }
 dialog .campo input, dialog .campo select, dialog .campo textarea, dialog .nota select { background: #fff; clip-path: none; border: 2px solid var(--tinta); }
+#mini-mapa { height: 220px; border: 2px solid var(--tinta); background: var(--nebulosa); }
+#ponto .sub { margin: 0; }
 dialog fieldset { border: 2px dashed var(--cinza); padding: 10px 12px; margin: 0; display: grid; gap: 8px; }
 dialog legend { font-size: 0.875rem; font-weight: 700; padding: 0 4px; }
 dialog :focus-visible { outline-offset: 2px; }

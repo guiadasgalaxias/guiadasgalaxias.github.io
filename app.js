@@ -226,6 +226,74 @@
     if (largo || painel === "mapa") { iniciaMapa(); if (mapa) mapa.invalidateSize(); }
   }
 
+  // ---------- ponto no mapa da indicação: pelo endereço (Nominatim) ou tocando no mapa ----------
+  const NO_PR = (lat, lon) => lat > -26.8 && lat < -22.4 && lon > -54.7 && lon < -48.0;
+  const PONTO_VAZIO = "Toque no mapa para marcar onde fica, ou localize pelo endereço. Sem ponto, o lugar aparece na sede do município.";
+  let mini = null;
+  let pino = null;
+  const sedeDe = (form) => porCodigo.get(porNome.get(chave(form.elements.mun.value)));
+  const avisaPonto = (texto) => { $("#ponto-status").textContent = texto; };
+
+  function marcaPonto(lat, lon, centraliza) {
+    const form = $("#dlg-lugar form");
+    if (!NO_PR(lat, lon)) return avisaPonto("Esse ponto fica fora do Paraná. Marque de novo.");
+    form.elements.lat.value = lat.toFixed(6);
+    form.elements.lon.value = lon.toFixed(6);
+    if (pino) pino.setLatLng([lat, lon]);
+    else {
+      pino = L.marker([lat, lon], { draggable: true, icon: L.divIcon({ className: "", html: marcador(form.elements.t.value), iconSize: [28, 28] }) }).addTo(mini);
+      pino.on("dragend", () => { const p = pino.getLatLng(); marcaPonto(p.lat, p.lng); });
+    }
+    if (centraliza) mini.setView([lat, lon], 17);
+    // Município vazio: sugere a sede mais próxima do ponto (o colega pode trocar).
+    if (!form.elements.mun.value.trim()) form.elements.mun.value = municipios.reduce((a, b) => (km({ lat, lon }, a) < km({ lat, lon }, b) ? a : b)).n;
+    avisaPonto("Ponto marcado. Arraste o pino ou toque no mapa para ajustar.");
+  }
+
+  /** Mostra o município do formulário no mini mapa (só enquanto não há pino). */
+  function centralizaMini(form) {
+    if (!mini || pino) return;
+    const sede = sedeDe(form);
+    mini.setView(sede ? [sede.lat, sede.lon] : [-24.7, -51.6], sede ? 13 : 7);
+  }
+
+  function preparaPonto(form) {
+    form.elements.lat.value = form.elements.lon.value = "";
+    avisaPonto(PONTO_VAZIO);
+    if (!window.L) { $("#ponto").hidden = true; return; }
+    if (!mini) {
+      mini = L.map("mini-mapa").on("click", (ev) => marcaPonto(ev.latlng.lat, ev.latlng.lng));
+      L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19, attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>' }).addTo(mini);
+    }
+    if (pino) { pino.remove(); pino = null; }
+    mini.invalidateSize();
+    centralizaMini(form);
+  }
+
+  async function localizaEndereco(ev) {
+    const form = ev.target.form;
+    const sede = sedeDe(form);
+    const endereco = form.elements.e.value.trim();
+    if (!endereco || !sede) return avisaPonto("Preencha o endereço e escolha o município da lista para localizar.");
+    ev.target.disabled = true;
+    avisaPonto("Procurando o endereço...");
+    try {
+      const url = "https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&countrycodes=br&viewbox=-54.7,-22.4,-48.0,-26.8&bounded=1&q=" + encodeURIComponent(`${endereco}, ${sede.n}, Paraná`);
+      const [achado] = await fetch(url).then((r) => { if (!r.ok) throw new Error(r.status); return r.json(); });
+      if (achado && NO_PR(Number(achado.lat), Number(achado.lon))) {
+        marcaPonto(Number(achado.lat), Number(achado.lon), true);
+        avisaPonto("Endereço localizado. Confira o pino e arraste se precisar.");
+      } else {
+        centralizaMini(form);
+        avisaPonto("Endereço não encontrado. Toque no mapa para marcar o ponto.");
+      }
+    } catch (erro) {
+      avisaPonto("Não deu para consultar o endereço agora. Toque no mapa para marcar o ponto.");
+    } finally {
+      ev.target.disabled = false;
+    }
+  }
+
   // ---------- formulários ----------
   function abre(qual, lugar) {
     const dlg = $(`#dlg-${qual}`);
@@ -246,6 +314,7 @@
     if (form.elements.data) form.elements.data.max = new Date().toISOString().slice(0, 10);
     if (form.elements.autor) form.elements.autor.value = localStorage.getItem("guia-autor") || "";
     dlg.showModal();
+    if (qual === "lugar") preparaPonto(form); // depois de abrir: o mapa precisa do tamanho real
   }
   function alternaTipo(form) {
     for (const f of form.querySelectorAll("[data-so]")) f.hidden = f.dataset.so !== form.elements.t.value;
@@ -361,6 +430,7 @@
     console.assert(Math.abs(km({ lat: -25.43, lon: -49.27 }, { lat: -25.09, lon: -50.16 }) - 97) < 5, "km Curitiba-Ponta Grossa");
     const m = mescla([{ id: "a", m: municipios[0].c, n: "A", lat: 1, lon: 1 }, { id: "b", m: municipios[0].c, n: "B", lat: 1, lon: 1 }], [{ id: "a", status: "removido" }, { id: "b", tel: "42" }, { id: "c", m: municipios[1].c, n: "C" }]);
     console.assert(m.length === 2 && m[0].tel === "42" && m[1].ap === 1, "mescla");
+    console.assert(NO_PR(-25.43, -49.27) && !NO_PR(-23.55, -46.63) && !NO_PR(0, 0), "NO_PR");
     console.info("demo ok");
   }
 
@@ -377,6 +447,8 @@
   for (const f of document.querySelectorAll("dialog form")) f.addEventListener("submit", envia);
   $("#dlg-lugar form").elements.t.addEventListener("change", (ev) => alternaTipo(ev.target.form));
   $("#abrir-indicar").addEventListener("click", () => abre("lugar"));
+  $("#localizar-endereco").addEventListener("click", localizaEndereco);
+  $("#dlg-lugar form").elements.mun.addEventListener("change", (ev) => centralizaMini(ev.target.form));
   $("#perto-de-mim").addEventListener("click", pertoDeMim);
   matchMedia("(min-width: 900px)").addEventListener("change", () => mostra("lista"));
 

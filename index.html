@@ -107,6 +107,13 @@
     <label class="campo"><span>Nome</span><input name="n" required maxlength="120"></label>
     <label class="campo"><span>Endereço</span><input name="e" required maxlength="200"></label>
     <label class="campo"><span>Município</span><input name="mun" list="lista-mun" required autocomplete="off"></label>
+    <div class="campo" id="ponto">
+      <span>Ponto no mapa (opcional)</span>
+      <button class="botao" type="button" id="localizar-endereco">Localizar pelo endereço</button>
+      <div id="mini-mapa" aria-label="Mapa para marcar o ponto do lugar"></div>
+      <p class="sub" id="ponto-status" role="status"></p>
+      <input type="hidden" name="lat"><input type="hidden" name="lon">
+    </div>
     <label class="campo"><span>Telefone</span><input name="tel" type="tel" inputmode="tel" required maxlength="20" placeholder="(42) 3333-0000"></label>
     <label class="campo"><span>WhatsApp</span><input name="wa" type="tel" inputmode="tel" maxlength="20" placeholder="(42) 99999-0000"></label>
     <label class="campo"><span>E-mail (se não tiver WhatsApp)</span><input name="email" type="email" maxlength="120"></label>
