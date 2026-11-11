@@ -14,10 +14,10 @@
  */
 
 const ABAS = {
-  lugares: ["quando", "status", "id", "t", "n", "e", "m", "tel", "wa", "email", "ok", "valor", "almoco", "jantar", "lat", "lon", "proximos", "autor"],
+  lugares: ["quando", "status", "id", "t", "n", "e", "m", "tel", "wa", "email", "ok", "valor", "almoco", "jantar", "lat", "lon", "proximos", "autor", "nota", "comentario"],
   avaliacoes: ["quando", "status", "id", "autor", "data", "limpeza", "atendimento", "conforto", "preco", "ok", "comentario", "remover"],
   correcoes: ["quando", "status", "id", "texto", "autor"],
-  confirmacoes: ["quando", "status", "id", "autor", "ok"],
+  confirmacoes: ["quando", "status", "id", "autor", "ok", "nota", "comentario"],
   vinculos: ["quando", "status", "m_a", "m_b", "autor"],
 };
 const TIPOS = ["hotel", "rest", "posto"];
@@ -38,7 +38,9 @@ function setup() {
 /** Primeira chamada numa planilha nova cria as abas sozinha. */
 function garanteAbas() {
   const ss = SpreadsheetApp.getActive();
-  if (Object.keys(ABAS).some((nome) => !ss.getSheetByName(nome))) setup();
+  // Aba faltando ou com menos colunas que o esperado (versão antiga): recria os cabeçalhos, sem tocar nos dados.
+  const desatualizada = (nome) => { const aba = ss.getSheetByName(nome); return !aba || aba.getLastColumn() < ABAS[nome].length; };
+  if (Object.keys(ABAS).some(desatualizada)) setup();
 }
 
 function responde(obj) {
@@ -57,7 +59,7 @@ function soDigitos(valor) {
 }
 function nota(valor) {
   const n = Number(valor);
-  if (!(n >= 1 && n <= 5)) throw new Error("nota fora de 1 a 5");
+  if (!(n >= 1 && n <= 5)) throw new Error("dê uma nota de 1 a 5 estrelas");
   return Math.round(n);
 }
 function linhas(nome) {
@@ -75,18 +77,30 @@ function doGet() {
     const pronto = cache.get("publico");
     if (pronto) return ContentService.createTextOutput(pronto).setMimeType(ContentService.MimeType.JSON);
 
-    const lugares = linhas("lugares")
+    const todosLugares = linhas("lugares");
+    const lugares = todosLugares
       .filter((l) => l.status === "aprovado" || l.status === "removido")
       .map((l) => Object.fromEntries(PUBLICOS_LUGAR.map((c) => [c, l[c]])));
 
     const notas = {};
-    linhas("avaliacoes").filter((a) => a.status === "aprovado").forEach((a) => {
-      const n = notas[a.id] || (notas[a.id] = { n: 0, soma: 0, ok: false, comentarios: [] });
+    const eSim = (v) => v === true || v === 1 || v === "1";
+    /** Soma uma nota (1 a 5) ao lugar; o comentário sai com a nota de quem escreveu, sem o nome. */
+    const pontua = (id, valor, ok, comentario) => {
+      if (!(valor >= 1 && valor <= 5)) return;
+      const n = notas[id] || (notas[id] = { n: 0, soma: 0, ok: false, comentarios: [] });
       n.n += 1;
-      n.soma += (Number(a.limpeza) + Number(a.atendimento) + Number(a.conforto) + Number(a.preco)) / 4;
-      n.ok = n.ok || a.ok === true || a.ok === 1 || a.ok === "1";
-      if (a.comentario) n.comentarios.push(String(a.comentario));
-    });
+      n.soma += valor;
+      n.ok = n.ok || eSim(ok);
+      if (comentario) n.comentarios.push({ nota: Math.round(valor), texto: String(comentario) });
+    };
+    todosLugares.filter((l) => l.status === "aprovado").forEach((l) => pontua(l.id, Number(l.nota), l.ok, l.comentario));
+    const confirmacoes = linhas("confirmacoes").filter((c) => c.status === "aprovado");
+    // Cada colega pontua um lugar uma vez: se confirmar de novo, vale a nota mais recente.
+    const ultima = {};
+    confirmacoes.forEach((c) => { if (c.nota !== "") ultima[c.id + "|" + String(c.autor).trim().toLowerCase()] = c; });
+    Object.keys(ultima).forEach((k) => pontua(ultima[k].id, Number(ultima[k].nota), ultima[k].ok, ultima[k].comentario));
+    linhas("avaliacoes").filter((a) => a.status === "aprovado").forEach((a) =>
+      pontua(a.id, (Number(a.limpeza) + Number(a.atendimento) + Number(a.conforto) + Number(a.preco)) / 4, a.ok, a.comentario));
     Object.keys(notas).forEach((id) => {
       notas[id].media = Math.round((notas[id].soma / notas[id].n) * 10) / 10;
       delete notas[id].soma;
@@ -95,11 +109,11 @@ function doGet() {
     // Confirmações: conta nomes distintos por lugar; o nome em si não sai daqui.
     const confirma = {};
     const jaContou = {};
-    linhas("confirmacoes").filter((c) => c.status === "aprovado").forEach((c) => {
+    confirmacoes.forEach((c) => {
       const quem = c.id + "|" + String(c.autor).trim().toLowerCase();
       const item = confirma[c.id] || (confirma[c.id] = { n: 0, ok: false });
       if (!jaContou[quem]) { jaContou[quem] = true; item.n += 1; }
-      item.ok = item.ok || c.ok === true || c.ok === 1 || c.ok === "1";
+      item.ok = item.ok || eSim(c.ok);
     });
 
     const vinculos = linhas("vinculos").filter((v) => v.status === "aprovado").map((v) => [Number(v.m_a), Number(v.m_b)]);
@@ -142,7 +156,8 @@ function doPost(e) {
       if (d.t === "hotel" && !d.ok) throw new Error("só entram hotéis cujo valor cabe na diária");
       aba = "lugares";
       registro = { quando, status: "aprovado", id: "c" + Utilities.getUuid().slice(0, 8), t: d.t, n, e: end, m, tel, wa, email,
-        ok: d.ok ? 1 : "", valor: limpa(d.valor, 12), almoco: d.almoco ? 1 : "", jantar: d.jantar ? 1 : "", proximos: limpa(d.proximos, 200), autor };
+        ok: d.ok ? 1 : "", valor: limpa(d.valor, 12), almoco: d.almoco ? 1 : "", jantar: d.jantar ? 1 : "", proximos: limpa(d.proximos, 200), autor,
+        nota: d.nota ? nota(d.nota) : "", comentario: limpa(d.comentario, 500) };
     } else if (d.tipo === "avaliacao") {
       const id = limpa(d.id, 40);
       if (!/^[a-z0-9]+$/i.test(id)) throw new Error("lugar inválido");
@@ -154,7 +169,7 @@ function doPost(e) {
       const id = limpa(d.id, 40);
       if (!/^[a-z0-9]+$/i.test(id)) throw new Error("lugar inválido");
       aba = "confirmacoes";
-      registro = { quando, status: "aprovado", id, autor, ok: d.ok ? 1 : "" };
+      registro = { quando, status: "aprovado", id, autor, ok: d.ok ? 1 : "", nota: d.nota ? nota(d.nota) : "", comentario: limpa(d.comentario, 500) };
     } else if (d.tipo === "correcao") {
       const id = limpa(d.id, 40);
       const texto = limpa(d.texto, 600);

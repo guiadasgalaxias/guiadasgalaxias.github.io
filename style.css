@@ -130,6 +130,21 @@ svg.px, img.px { image-rendering: pixelated; }
 .selo svg { width: 12px; height: 12px; }
 .selo.ok { background: var(--broto-escuro); color: #fff; }
 .selo.atencao { background: var(--estrela); }
+/* Estrelas: nota média no cartão e seletor de nota nos formulários */
+.estrelas-fixas { display: inline-flex; gap: 2px; vertical-align: -3px; color: #c98a00; }
+.estrelas-fixas svg { width: 18px; height: 18px; }
+.estrelas-fixas svg.vazia { color: #d5cdb6; }
+.lugar .nota-media { margin-top: 6px; font-weight: 700; color: var(--tinta); }
+.lugar blockquote .estrelas-fixas { display: flex; margin-bottom: 2px; }
+.lugar blockquote .estrelas-fixas svg { width: 14px; height: 14px; }
+dialog fieldset.estrelas { display: flex; gap: 4px; border: 0; padding: 0; }
+.estrelas legend { float: left; width: 100%; margin-bottom: 4px; padding: 0; }
+.estrelas label { width: 48px; height: 48px; display: grid; place-items: center; color: #d5cdb6; cursor: pointer; position: relative; }
+.estrelas label svg { width: 36px; height: 36px; }
+.estrelas input { position: absolute; inset: 0; opacity: 0; margin: 0; cursor: pointer; }
+/* pinta a estrela marcada e todas as anteriores */
+.estrelas label:has(input:checked), .estrelas label:has(~ label input:checked) { color: #c98a00; }
+.estrelas label:has(input:focus-visible) { outline: 3px solid var(--rosa); outline-offset: 2px; }
 .acoes { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
 .acoes a, .acoes button {
   flex: 1 1 auto;

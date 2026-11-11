@@ -9,7 +9,8 @@ Não entre em pânico. Onde dormir, comer e abastecer em viagem pelo Paraná: ho
 - Site estático (GitHub Pages): `index.html`, `style.css`, `app.js`.
 - Base inicial em `data/lugares.json` (gerada por `build/build_data.py`).
 - Tudo vai para uma planilha Google pelo Apps Script em `apps-script/`. Indicação de lugar e confirmação entram direto; avaliação e correção ficam `pendente` até um mantenedor trocar o `status` para `aprovado`.
-- Confirmação: outro colega atesta que usou e recomenda. Cada nome conta uma vez por lugar. A lista ordena por pontos: confirmação vale 2, indicação de colega 1, nota média até 1.
+- Indicação e confirmação pedem nota de 1 a 5 estrelas e aceitam comentário; os dois aparecem no cartão do lugar, sem o nome de quem escreveu.
+- Confirmação: outro colega atesta que usou. Cada nome conta uma vez por lugar. A lista ordena por pontos: confirmação vale 2, indicação de colega 1, nota média até 1.
 - Nome e data de quem avalia ficam só na planilha. O site mostra nota e comentário.
 - "Município próximo": sedes a até 20/42/60/80 km em linha reta, mais os vínculos aprovados na aba `vinculos`.
 

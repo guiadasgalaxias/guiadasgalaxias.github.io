@@ -107,6 +107,14 @@
     });
   }
 
+  /** Cinco estrelas em pixel, pintadas até a nota (arredondada). */
+  function estrelas(valor) {
+    const cheias = Math.round(valor);
+    const linha = el("span", { class: "estrelas-fixas", role: "img", "aria-label": `${cheias} de 5 estrelas` });
+    for (let i = 1; i <= 5; i++) { const s = icone("estrela"); if (i > cheias) s.classList.add("vazia"); linha.append(s); }
+    return linha;
+  }
+
   function cartao(l, dist) {
     const nota = notas[l.id];
     const conf = confirma[l.id];
@@ -121,7 +129,6 @@
       l.t === "posto" && el("span", { class: "selo" }, l.b ? `Prime, ${l.b}` : "Prime"),
       l.almoco && el("span", { class: "selo" }, "Almoço"),
       l.jantar && el("span", { class: "selo" }, "Jantar"),
-      nota && el("span", { class: "selo ok" }, icone("estrela"), `${nota.media.toFixed(1)} (${nota.n})`),
       conf && el("span", { class: "selo ok" }, `Confirmado por ${conf.n} ${conf.n === 1 ? "colega" : "colegas"}`),
       l.src === "colega" && el("span", { class: "selo" }, "Indicado por colega"),
       l.ap && el("span", { class: "selo atencao" }, "Local aproximado no mapa"),
@@ -133,6 +140,7 @@
           el("h3", {}, l.n),
           onde && el("p", {}, onde),
           l.h && el("p", {}, l.h),
+          nota && el("p", { class: "nota-media" }, estrelas(nota.media), ` ${nota.media.toFixed(1).replace(".", ",")} de 5, por ${nota.n} ${nota.n === 1 ? "colega" : "colegas"}`),
           el("div", { class: "selos" }, ...selos))),
       el("div", { class: "acoes" },
         l.tel && el("a", { class: "principal", href: `tel:+55${l.tel}`, "aria-label": `Ligar para ${l.n}: ${fone(l.tel)}` }, `Ligar ${fone(l.tel)}`),
@@ -142,9 +150,10 @@
         el("button", { type: "button", onclick: () => abre("confirmar", l) }, "Confirmar"),
         el("button", { type: "button", onclick: () => abre("avaliar", l) }, "Avaliar"),
         el("button", { type: "button", onclick: () => abre("corrigir", l) }, "Corrigir")),
-      nota && nota.comentarios.length > 0 && el("details", {},
-        el("summary", {}, `Ver ${nota.comentarios.length} ${nota.comentarios.length === 1 ? "comentário" : "comentários"}`),
-        ...nota.comentarios.map((c) => el("blockquote", {}, c))));
+      // Até 2 comentários já aparecem abertos; acima disso ficam recolhidos para a lista não esticar.
+      nota && nota.comentarios.length > 0 && el("details", { open: nota.comentarios.length <= 2 ? "" : null },
+        el("summary", {}, `${nota.comentarios.length} ${nota.comentarios.length === 1 ? "comentário de colega" : "comentários de colegas"}`),
+        ...nota.comentarios.map((c) => el("blockquote", {}, c.nota ? estrelas(c.nota) : null, el("span", {}, c.texto || String(c))))));
   }
 
   function desenha(enquadra = true) {
@@ -265,6 +274,7 @@
       if (!dados.wa && !dados.email) return avisa("Informe o WhatsApp ou o e-mail do lugar.", true);
       if (dados.t === "hotel" && !dados.ok) return avisa("Só entram na lista hotéis cujo valor cabe na diária. Marque a caixa se for o caso.", true);
     }
+    if (form.querySelector("[data-estrelas]") && !dados.nota) return avisa("Dê uma nota de 1 a 5 estrelas.", true);
     if (!API) return avisa("O envio ainda não está ligado nesta versão do site. Avise um colega mantenedor.", true);
 
     botao.disabled = true;
@@ -355,6 +365,12 @@
     console.info("demo ok");
   }
 
+  // Seletor de nota: cinco botões de rádio nativos, desenhados como estrelas.
+  for (const campo of document.querySelectorAll("[data-estrelas]")) {
+    for (let i = 1; i <= 5; i++) {
+      campo.append(el("label", { title: `${i} de 5` }, el("input", { type: "radio", name: "nota", value: String(i) }), icone("estrela"), el("span", { class: "so-leitor" }, `${i} de 5 estrelas`)));
+    }
+  }
   for (const id of ["mun", "q", "raio", "so-ok", "per"]) $(`#${id}`).addEventListener("input", () => { limite = PAGINA; desenha(); });
   for (const c of document.querySelectorAll('input[name="tipo"]')) c.addEventListener("change", () => { limite = PAGINA; desenha(); });
   for (const b of document.querySelectorAll("[data-ver]")) b.addEventListener("click", () => mostra(b.dataset.ver));
