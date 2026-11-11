@@ -67,7 +67,7 @@
         <label>Órbita: municípios a até
           <select id="raio"><option value="20">20 km</option><option value="42" selected>42 km</option><option value="60">60 km</option><option value="80">80 km</option></select>
         </label>
-        <label><input type="checkbox" id="so-ok"> Só indicados por colegas</label>
+        <label><input type="checkbox" id="so-ok"> Só indicados ou confirmados por colegas</label>
         <label>Refeição
           <select id="per"><option value="">Qualquer</option><option value="almoco">Só com almoço informado</option><option value="jantar">Só com jantar informado</option></select>
         </label>
@@ -100,7 +100,7 @@
 <dialog id="dlg-lugar" aria-labelledby="t-lugar">
   <form method="dialog" data-tipo="lugar">
     <h2 id="t-lugar">Indicar um lugar</h2>
-    <p class="sub">Entra no guia depois que um colega mantenedor conferir.</p>
+    <p class="sub">Entra no guia na hora. Outros colegas podem confirmar, e os mais confirmados sobem na lista.</p>
     <label class="campo"><span>Tipo</span>
       <select name="t" required><option value="hotel">Hotel</option><option value="rest">Restaurante</option><option value="posto">Posto</option></select>
     </label>
@@ -125,6 +125,21 @@
     <label class="pote" aria-hidden="true">Não preencha<input name="site" tabindex="-1" autocomplete="off"></label>
     <p class="retorno" role="status" hidden></p>
     <div class="botoes"><button class="botao" type="button" data-fechar>Cancelar</button><button class="botao cheio" type="submit">Enviar indicação</button></div>
+  </form>
+</dialog>
+
+<!-- Confirmar -->
+<dialog id="dlg-confirmar" aria-labelledby="t-confirmar">
+  <form method="dialog" data-tipo="confirmacao">
+    <h2 id="t-confirmar">Confirmar parada</h2>
+    <p class="sub" data-alvo></p>
+    <input type="hidden" name="id">
+    <p>Confirme se você já usou e recomenda. Cada colega conta uma vez, e os lugares mais confirmados sobem na lista.</p>
+    <label class="marcar" data-so-hotel><input type="checkbox" name="ok" value="1"> O valor coube na diária</label>
+    <label class="campo"><span>Seu nome (não aparece no site)</span><input name="autor" required maxlength="80" autocomplete="name"></label>
+    <label class="pote" aria-hidden="true">Não preencha<input name="site" tabindex="-1" autocomplete="off"></label>
+    <p class="retorno" role="status" hidden></p>
+    <div class="botoes"><button class="botao" type="button" data-fechar>Cancelar</button><button class="botao cheio" type="submit">Confirmar parada</button></div>
   </form>
 </dialog>
 

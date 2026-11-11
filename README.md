@@ -8,7 +8,8 @@ Não entre em pânico. Onde dormir, comer e abastecer em viagem pelo Paraná: ho
 
 - Site estático (GitHub Pages): `index.html`, `style.css`, `app.js`.
 - Base inicial em `data/lugares.json` (gerada por `build/build_data.py`).
-- Indicações, avaliações e correções vão para uma planilha Google pelo Apps Script em `apps-script/` e só aparecem depois que um mantenedor troca o `status` de `pendente` para `aprovado`.
+- Tudo vai para uma planilha Google pelo Apps Script em `apps-script/`. Indicação de lugar e confirmação entram direto; avaliação e correção ficam `pendente` até um mantenedor trocar o `status` para `aprovado`.
+- Confirmação: outro colega atesta que usou e recomenda. Cada nome conta uma vez por lugar. A lista ordena por pontos: confirmação vale 2, indicação de colega 1, nota média até 1.
 - Nome e data de quem avalia ficam só na planilha. O site mostra nota e comentário.
 - "Município próximo": sedes a até 20/42/60/80 km em linha reta, mais os vínculos aprovados na aba `vinculos`.
 
@@ -48,9 +49,10 @@ Cole a URL `/exec` em `config.js`.
 
 | Aba | O que fazer |
 |---|---|
-| `lugares` | `status` = `aprovado` publica. Linha com o `id` de um lugar e `status` = `removido` tira da lista. Preencher `lat`/`lon` posiciona no mapa. |
+| `lugares` | Entra como `aprovado`. Trocar para `rejeitado` tira do site. Linha com o `id` de um lugar e `status` = `removido` tira da lista. Preencher `lat`/`lon` posiciona no mapa. |
 | `avaliacoes` | `aprovado` publica nota e comentário. Coluna `remover` = `SIM` é pedido de remoção. |
 | `correcoes` | Ler, aplicar na aba `lugares` (linha com o mesmo `id`), marcar `aprovado`. |
+| `confirmacoes` | Entra como `aprovado`. Trocar para `rejeitado` desconta a confirmação. |
 | `vinculos` | Par de códigos IBGE (`m_a`, `m_b`) que vale como "próximo" mesmo fora do raio. |
 
 ## Créditos

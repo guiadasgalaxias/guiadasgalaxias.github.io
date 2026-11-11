@@ -1,10 +1,14 @@
 /**
  * Guia do Extensionista das Galáxias: backend em Apps Script, ligado a uma planilha Google.
  *
- * doGet  -> devolve só o que está com status "aprovado" (ou "removido"), sem nome nem data de quem avaliou.
- * doPost -> grava indicação, avaliação ou correção com status "pendente" para um mantenedor conferir.
+ * doGet  -> devolve só o que está com status "aprovado" (ou "removido"), sem nome nem data de ninguém.
+ * doPost -> indicação de lugar e confirmação entram direto ("aprovado"); avaliação e correção
+ *           ficam "pendente" para um mantenedor conferir.
  *
- * Moderação: na planilha, troque a coluna "status" de "pendente" para "aprovado" ou "rejeitado".
+ * Confirmação: outro colega atesta que usou e recomenda. Cada nome conta uma vez por lugar,
+ * e o site ordena os lugares pelos mais confirmados.
+ *
+ * Moderação: na planilha, troque a coluna "status" para "aprovado" ou "rejeitado".
  * Para tirar um lugar da lista (inclusive da base inicial), ponha uma linha na aba "lugares"
  * com o id dele e status "removido".
  */
@@ -13,6 +17,7 @@ const ABAS = {
   lugares: ["quando", "status", "id", "t", "n", "e", "m", "tel", "wa", "email", "ok", "valor", "almoco", "jantar", "lat", "lon", "proximos", "autor"],
   avaliacoes: ["quando", "status", "id", "autor", "data", "limpeza", "atendimento", "conforto", "preco", "ok", "comentario", "remover"],
   correcoes: ["quando", "status", "id", "texto", "autor"],
+  confirmacoes: ["quando", "status", "id", "autor", "ok"],
   vinculos: ["quando", "status", "m_a", "m_b", "autor"],
 };
 const TIPOS = ["hotel", "rest", "posto"];
@@ -32,7 +37,8 @@ function setup() {
 
 /** Primeira chamada numa planilha nova cria as abas sozinha. */
 function garanteAbas() {
-  if (!SpreadsheetApp.getActive().getSheetByName("lugares")) setup();
+  const ss = SpreadsheetApp.getActive();
+  if (Object.keys(ABAS).some((nome) => !ss.getSheetByName(nome))) setup();
 }
 
 function responde(obj) {
@@ -86,9 +92,19 @@ function doGet() {
       delete notas[id].soma;
     });
 
+    // Confirmações: conta nomes distintos por lugar; o nome em si não sai daqui.
+    const confirma = {};
+    const jaContou = {};
+    linhas("confirmacoes").filter((c) => c.status === "aprovado").forEach((c) => {
+      const quem = c.id + "|" + String(c.autor).trim().toLowerCase();
+      const item = confirma[c.id] || (confirma[c.id] = { n: 0, ok: false });
+      if (!jaContou[quem]) { jaContou[quem] = true; item.n += 1; }
+      item.ok = item.ok || c.ok === true || c.ok === 1 || c.ok === "1";
+    });
+
     const vinculos = linhas("vinculos").filter((v) => v.status === "aprovado").map((v) => [Number(v.m_a), Number(v.m_b)]);
 
-    const saida = JSON.stringify({ success: true, data: { lugares, notas, vinculos }, error: null });
+    const saida = JSON.stringify({ success: true, data: { lugares, notas, confirma, vinculos }, error: null });
     try { cache.put("publico", saida, CACHE_SEG); } catch (_) { /* passou de 100 KB: segue sem cache */ }
     return ContentService.createTextOutput(saida).setMimeType(ContentService.MimeType.JSON);
   } catch (erro) {
@@ -125,7 +141,7 @@ function doPost(e) {
       if (!wa && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) throw new Error("informe WhatsApp ou e-mail");
       if (d.t === "hotel" && !d.ok) throw new Error("só entram hotéis cujo valor cabe na diária");
       aba = "lugares";
-      registro = { quando, status: "pendente", id: "c" + Utilities.getUuid().slice(0, 8), t: d.t, n, e: end, m, tel, wa, email,
+      registro = { quando, status: "aprovado", id: "c" + Utilities.getUuid().slice(0, 8), t: d.t, n, e: end, m, tel, wa, email,
         ok: d.ok ? 1 : "", valor: limpa(d.valor, 12), almoco: d.almoco ? 1 : "", jantar: d.jantar ? 1 : "", proximos: limpa(d.proximos, 200), autor };
     } else if (d.tipo === "avaliacao") {
       const id = limpa(d.id, 40);
@@ -134,6 +150,11 @@ function doPost(e) {
       aba = "avaliacoes";
       registro = { quando, status: "pendente", id, autor, data: d.data, limpeza: nota(d.limpeza), atendimento: nota(d.atendimento),
         conforto: nota(d.conforto), preco: nota(d.preco), ok: d.ok ? 1 : "", comentario: limpa(d.comentario, 500), remover: d.remover ? "SIM" : "" };
+    } else if (d.tipo === "confirmacao") {
+      const id = limpa(d.id, 40);
+      if (!/^[a-z0-9]+$/i.test(id)) throw new Error("lugar inválido");
+      aba = "confirmacoes";
+      registro = { quando, status: "aprovado", id, autor, ok: d.ok ? 1 : "" };
     } else if (d.tipo === "correcao") {
       const id = limpa(d.id, 40);
       const texto = limpa(d.texto, 600);
@@ -155,6 +176,7 @@ function doPost(e) {
     const planilha = SpreadsheetApp.getActive().getSheetByName(aba);
     if (!planilha) throw new Error("planilha não configurada, avise um mantenedor");
     planilha.appendRow(ABAS[aba].map((c) => (registro[c] === undefined ? "" : registro[c])));
+    cache.remove("publico"); // o que entra direto precisa aparecer já na próxima leitura
     return responde({ success: true, data: { id: registro.id }, error: null });
   } catch (erro) {
     console.error(erro);

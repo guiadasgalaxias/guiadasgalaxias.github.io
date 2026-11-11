@@ -42,6 +42,8 @@
   let porNome = new Map();
   let lugares = [];
   let notas = {};
+  let confirma = {};
+  let baseFixa = [];
   let vinculos = [];
   let limite = PAGINA;
   let mapa = null;
@@ -73,15 +75,20 @@
   function filtra(e) {
     return lugares.filter((l) =>
       e.tipos.has(l.t) &&
-      (!e.soOk || l.src === "colega" || notas[l.id]) &&
+      (!e.soOk || l.src === "colega" || notas[l.id] || confirma[l.id]) &&
       (!e.per || l.t !== "rest" || l[e.per]) &&
       (!e.q || l.busca.includes(e.q)));
+  }
+
+  /** Pontuação que ordena a lista: confirmação vale 2, indicação de colega 1, e a nota média até 1. */
+  function pontos(l) {
+    return (confirma[l.id] ? confirma[l.id].n * 2 : 0) + (l.src === "colega" ? 1 : 0) + (notas[l.id] ? notas[l.id].media / 5 : 0);
   }
 
   /** Devolve as seções da lista: [{titulo, sub, itens, dist}]. */
   function secoes(e) {
     const base = filtra(e);
-    const ordena = (a, b) => ORDEM[a.t] - ORDEM[b.t] || a.n.localeCompare(b.n, "pt-BR");
+    const ordena = (a, b) => ORDEM[a.t] - ORDEM[b.t] || pontos(b) - pontos(a) || a.n.localeCompare(b.n, "pt-BR");
     if (e.mun) {
       const nome = porCodigo.get(e.mun).n;
       const perto = proximos(e.mun, e.raio);
@@ -102,6 +109,7 @@
 
   function cartao(l, dist) {
     const nota = notas[l.id];
+    const conf = confirma[l.id];
     const mun = porCodigo.get(l.m);
     const d = dist && dist.get(l.m);
     const onde = [l.e, d ? `${mun.n}, a ${Math.round(d.km)} km${d.manual ? " (indicado por colegas)" : ""}` : null].filter(Boolean).join(". ");
@@ -109,11 +117,12 @@
     const destino = l.ap ? encodeURIComponent(`${l.n}, ${l.e || ""}, ${mun.n}, PR`) : `${l.lat},${l.lon}`;
     const rota = `https://www.google.com/maps/dir/?api=1&destination=${destino}`;
     const selos = [
-      l.t === "hotel" && (l.ok || (nota && nota.ok) ? el("span", { class: "selo ok" }, "Cabe na diária") : el("span", { class: "selo atencao" }, "Valor a confirmar")),
+      l.t === "hotel" && (l.ok || (nota && nota.ok) || (conf && conf.ok) ? el("span", { class: "selo ok" }, "Cabe na diária") : el("span", { class: "selo atencao" }, "Valor a confirmar")),
       l.t === "posto" && el("span", { class: "selo" }, l.b ? `Prime, ${l.b}` : "Prime"),
       l.almoco && el("span", { class: "selo" }, "Almoço"),
       l.jantar && el("span", { class: "selo" }, "Jantar"),
       nota && el("span", { class: "selo ok" }, icone("estrela"), `${nota.media.toFixed(1)} (${nota.n})`),
+      conf && el("span", { class: "selo ok" }, `Confirmado por ${conf.n} ${conf.n === 1 ? "colega" : "colegas"}`),
       l.src === "colega" && el("span", { class: "selo" }, "Indicado por colega"),
       l.ap && el("span", { class: "selo atencao" }, "Local aproximado no mapa"),
     ];
@@ -130,6 +139,7 @@
         l.wa && el("a", { href: `https://wa.me/55${l.wa}`, target: "_blank", rel: "noopener" }, "WhatsApp"),
         l.email && el("a", { href: `mailto:${l.email}` }, "E-mail"),
         el("a", { href: rota, target: "_blank", rel: "noopener" }, "Rota"),
+        el("button", { type: "button", onclick: () => abre("confirmar", l) }, "Confirmar"),
         el("button", { type: "button", onclick: () => abre("avaliar", l) }, "Avaliar"),
         el("button", { type: "button", onclick: () => abre("corrigir", l) }, "Corrigir")),
       nota && nota.comentarios.length > 0 && el("details", {},
@@ -219,6 +229,8 @@
     if (lugar) {
       form.elements.id.value = lugar.id;
       $("[data-alvo]", form).textContent = `${lugar.n}, ${porCodigo.get(lugar.m).n}`;
+      const soHotel = $("[data-so-hotel]", form);
+      if (soHotel) soHotel.hidden = lugar.t !== "hotel";
     } else {
       form.elements.mun.value = $("#mun").value;
       alternaTipo(form);
@@ -230,6 +242,13 @@
   function alternaTipo(form) {
     for (const f of form.querySelectorAll("[data-so]")) f.hidden = f.dataset.so !== form.elements.t.value;
   }
+
+  const RECEBIDO = {
+    lugar: "Transmissão recebida. Já está no guia, e outros colegas podem confirmar.",
+    confirmacao: "Confirmação registrada. Valeu por ajudar os colegas.",
+    avaliacao: "Transmissão recebida. Aparece no guia depois que um colega mantenedor conferir.",
+    correcao: "Transmissão recebida. Um colega mantenedor vai conferir e corrigir.",
+  };
 
   async function envia(ev) {
     ev.preventDefault();
@@ -256,7 +275,8 @@
       const json = await resp.json();
       if (!json.success) throw new Error(json.error || "falha no servidor");
       localStorage.setItem("guia-autor", dados.autor || "");
-      avisa("Transmissão recebida. Aparece no guia depois que um colega mantenedor conferir.");
+      avisa(RECEBIDO[dados.tipo]);
+      if (dados.tipo === "lugar" || dados.tipo === "confirmacao") sincroniza().then(() => desenha(false)).catch(() => {});
       setTimeout(() => form.closest("dialog").close(), 2200);
     } catch (erro) {
       botao.disabled = false;
@@ -285,21 +305,28 @@
     return [...mapaLugares.values()];
   }
 
+  /** Busca na planilha o que os colegas indicaram, confirmaram e avaliaram. */
+  async function sincroniza() {
+    const json = await fetch(API).then((r) => r.json());
+    if (!json.success) throw new Error(json.error);
+    notas = json.data.notas || {};
+    confirma = json.data.confirma || {};
+    vinculos = json.data.vinculos || [];
+    lugares = mescla(baseFixa, json.data.lugares || []).map(indexa);
+  }
+
   async function carrega() {
     const [mun, base] = await Promise.all(["data/municipios.json", "data/lugares.json"].map((u) => fetch(u).then((r) => { if (!r.ok) throw new Error(u); return r.json(); })));
     municipios = mun;
     porCodigo = new Map(mun.map((m) => [m.c, m]));
     porNome = new Map(mun.map((m) => [chave(m.n), m.c]));
     $("#lista-mun").append(...mun.map((m) => el("option", { value: m.n })));
+    baseFixa = base;
     lugares = base.map(indexa);
     desenha();
     if (!API) return;
     try {
-      const json = await fetch(API).then((r) => r.json());
-      if (!json.success) throw new Error(json.error);
-      notas = json.data.notas || {};
-      vinculos = json.data.vinculos || [];
-      lugares = mescla(base, json.data.lugares || []).map(indexa);
+      await sincroniza();
       desenha();
     } catch (erro) {
       $("#resumo").textContent += ". Indicações recentes dos colegas não carregaram; mostrando a base inicial.";
