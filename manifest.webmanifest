@@ -1,0 +1,15 @@
+{
+  "name": "Guia do Extensionista das Galáxias",
+  "short_name": "Guia Galáxias",
+  "description": "Não entre em pânico: onde dormir, comer e abastecer em viagem pelo Paraná.",
+  "lang": "pt-BR",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#17123a",
+  "theme_color": "#17123a",
+  "icons": [
+    { "src": "assets/logo.svg", "sizes": "any", "type": "image/svg+xml" },
+    { "src": "assets/icone-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "assets/icone-180.png", "sizes": "180x180", "type": "image/png" }
+  ]
+}

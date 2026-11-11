@@ -1,0 +1,6 @@
+# Planilha original tem CNPJ, inscrição estadual e nome de contato: não publicar
+*.xlsx
+build/raw/
+.clasprc.json
+__pycache__/
+.clasp.json

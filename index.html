@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Guia do Extensionista das Galáxias</title>
+<meta name="description" content="Não entre em pânico: tem onde dormir, comer e abastecer em viagem pelo Paraná. Lista por município, indicada e avaliada por colegas.">
+<meta name="theme-color" content="#17123a">
+<link rel="icon" href="assets/logo.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="assets/icone-180.png">
+<link rel="manifest" href="manifest.webmanifest">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="pt_BR">
+<meta property="og:title" content="Guia do Extensionista das Galáxias">
+<meta property="og:description" content="Não entre em pânico: tem onde dormir, comer e abastecer em viagem pelo Paraná. Lista por município, indicada e avaliada por colegas.">
+<meta property="og:image" content="https://extensionista-das-galaxias.github.io/assets/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:url" content="https://extensionista-das-galaxias.github.io/">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Pixelify+Sans:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="topo">
+  <div class="marca">
+    <img class="logo px" src="assets/logo.svg" alt="" width="56" height="56">
+    <h1>Guia do Extensionista das Galáxias</h1>
+    <img class="mascote px" src="assets/mascote.svg" alt="" width="56" height="56">
+  </div>
+  <p class="panico">Não entre em pânico</p>
+  <p class="lema">Tem onde dormir, comer e abastecer em qualquer canto do Paraná.</p>
+</header>
+<p class="aviso">Lista alimentada e mantida por colegas, como apoio. Não tem vínculo institucional com o IDR-Paraná.</p>
+
+<main class="principal-grade">
+  <section class="painel-lista" id="painel-lista">
+    <div class="filtros">
+      <div class="linha-mun">
+        <label class="campo">
+          <span>Qual é o seu destino?</span>
+          <input id="mun" aria-label="Município de destino" list="lista-mun" placeholder="Digite o município" autocomplete="off" enterkeyhint="search">
+        </label>
+        <button class="botao" id="perto-de-mim" type="button">Perto de mim</button>
+      </div>
+      <datalist id="lista-mun"></datalist>
+
+      <fieldset class="tipos">
+        <legend class="so-leitor">O que mostrar</legend>
+        <label><input type="checkbox" name="tipo" value="hotel" checked><svg class="px" aria-hidden="true"><use href="assets/sprites.svg#i-hotel"/></svg>Hotéis</label>
+        <label><input type="checkbox" name="tipo" value="rest" checked><svg class="px" aria-hidden="true"><use href="assets/sprites.svg#i-rest"/></svg>Restaurantes</label>
+        <label><input type="checkbox" name="tipo" value="posto" checked><svg class="px" aria-hidden="true"><use href="assets/sprites.svg#i-posto"/></svg>Postos</label>
+      </fieldset>
+
+      <label class="campo">
+        <span>Buscar por nome ou endereço</span>
+        <input id="q" type="search" placeholder="Ex.: hotel central, BR 277" enterkeyhint="search">
+      </label>
+
+      <details class="mais-filtros">
+      <summary>Mais filtros</summary>
+      <div class="finos">
+        <label>Órbita: municípios a até
+          <select id="raio"><option value="20">20 km</option><option value="42" selected>42 km</option><option value="60">60 km</option><option value="80">80 km</option></select>
+        </label>
+        <label><input type="checkbox" id="so-ok"> Só indicados por colegas</label>
+        <label>Refeição
+          <select id="per"><option value="">Qualquer</option><option value="almoco">Só com almoço informado</option><option value="jantar">Só com jantar informado</option></select>
+        </label>
+      </div>
+      </details>
+    </div>
+
+    <p class="resumo" id="resumo" role="status"></p>
+    <div class="lista" id="lista"></div>
+
+    <footer class="rodape">
+      <p>Guia de apoio mantido por colegas, sem vínculo institucional com o IDR-Paraná. Confirme valor e disponibilidade direto com o estabelecimento antes de decolar.</p>
+      <p>Contatos de hotéis: Cadastur, dados abertos do Ministério do Turismo. Hotéis e restaurantes da base inicial e o mapa: © colaboradores do <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>. Distância entre municípios medida em linha reta entre as sedes; pela estrada é maior.</p>
+      <p>Boa viagem, e não esqueça a toalha.</p>
+    </footer>
+  </section>
+
+  <section id="painel-mapa" hidden>
+    <div id="mapa" aria-label="Mapa dos lugares listados"></div>
+  </section>
+</main>
+
+<nav class="barra" aria-label="Navegação">
+  <button type="button" data-ver="lista" aria-pressed="true">Lista</button>
+  <button type="button" data-ver="mapa" aria-pressed="false">Mapa</button>
+  <button type="button" class="indicar" id="abrir-indicar">Indicar lugar</button>
+</nav>
+
+<!-- Indicar um lugar -->
+<dialog id="dlg-lugar" aria-labelledby="t-lugar">
+  <form method="dialog" data-tipo="lugar">
+    <h2 id="t-lugar">Indicar um lugar</h2>
+    <p class="sub">Entra no guia depois que um colega mantenedor conferir.</p>
+    <label class="campo"><span>Tipo</span>
+      <select name="t" required><option value="hotel">Hotel</option><option value="rest">Restaurante</option><option value="posto">Posto</option></select>
+    </label>
+    <label class="campo"><span>Nome</span><input name="n" required maxlength="120"></label>
+    <label class="campo"><span>Endereço</span><input name="e" required maxlength="200"></label>
+    <label class="campo"><span>Município</span><input name="mun" list="lista-mun" required autocomplete="off"></label>
+    <label class="campo"><span>Telefone</span><input name="tel" type="tel" inputmode="tel" required maxlength="20" placeholder="(42) 3333-0000"></label>
+    <label class="campo"><span>WhatsApp</span><input name="wa" type="tel" inputmode="tel" maxlength="20" placeholder="(42) 99999-0000"></label>
+    <label class="campo"><span>E-mail (se não tiver WhatsApp)</span><input name="email" type="email" maxlength="120"></label>
+    <fieldset data-so="hotel">
+      <legend>Hotel</legend>
+      <label class="marcar"><input type="checkbox" name="ok" value="1"> O valor cobrado cabe na diária</label>
+      <label class="campo"><span>Valor da diária do hotel (R$)</span><input name="valor" inputmode="decimal" maxlength="12"></label>
+    </fieldset>
+    <fieldset data-so="rest" hidden>
+      <legend>Atende</legend>
+      <label class="marcar"><input type="checkbox" name="almoco" value="1"> Almoço</label>
+      <label class="marcar"><input type="checkbox" name="jantar" value="1"> Jantar</label>
+    </fieldset>
+    <label class="campo"><span>Vale a pena para quem está em quais municípios próximos? (opcional)</span><input name="proximos" maxlength="200" placeholder="Ex.: Ivaí, Ipiranga"></label>
+    <label class="campo"><span>Seu nome</span><input name="autor" required maxlength="80" autocomplete="name"></label>
+    <label class="pote" aria-hidden="true">Não preencha<input name="site" tabindex="-1" autocomplete="off"></label>
+    <p class="retorno" role="status" hidden></p>
+    <div class="botoes"><button class="botao" type="button" data-fechar>Cancelar</button><button class="botao cheio" type="submit">Enviar indicação</button></div>
+  </form>
+</dialog>
+
+<!-- Avaliar -->
+<dialog id="dlg-avaliar" aria-labelledby="t-avaliar">
+  <form method="dialog" data-tipo="avaliacao">
+    <h2 id="t-avaliar">Avaliar</h2>
+    <p class="sub" data-alvo></p>
+    <input type="hidden" name="id">
+    <label class="campo"><span>Seu nome</span><input name="autor" required maxlength="80" autocomplete="name"></label>
+    <label class="campo"><span>Data da hospedagem ou visita</span><input name="data" type="date" required></label>
+    <fieldset>
+      <legend>Notas de 1 (ruim) a 5 (ótimo)</legend>
+      <label class="nota">Limpeza<select name="limpeza" required><option value="">–</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select></label>
+      <label class="nota">Atendimento<select name="atendimento" required><option value="">–</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select></label>
+      <label class="nota">Conforto e qualidade<select name="conforto" required><option value="">–</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select></label>
+      <label class="nota">Preço<select name="preco" required><option value="">–</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select></label>
+    </fieldset>
+    <label class="marcar"><input type="checkbox" name="ok" value="1"> O valor coube na diária</label>
+    <label class="campo"><span>Comentário (aparece no site, sem seu nome; não cite pessoas)</span><textarea name="comentario" rows="3" maxlength="500"></textarea></label>
+    <label class="marcar"><input type="checkbox" name="remover" value="1"> Experiência ruim: recomendo remover do guia</label>
+    <label class="pote" aria-hidden="true">Não preencha<input name="site" tabindex="-1" autocomplete="off"></label>
+    <p class="retorno" role="status" hidden></p>
+    <div class="botoes"><button class="botao" type="button" data-fechar>Cancelar</button><button class="botao cheio" type="submit">Enviar avaliação</button></div>
+  </form>
+</dialog>
+
+<!-- Corrigir -->
+<dialog id="dlg-corrigir" aria-labelledby="t-corrigir">
+  <form method="dialog" data-tipo="correcao">
+    <h2 id="t-corrigir">Corrigir dados</h2>
+    <p class="sub" data-alvo></p>
+    <input type="hidden" name="id">
+    <label class="campo"><span>O que está errado e qual é o certo?</span><textarea name="texto" rows="4" required maxlength="600" placeholder="Ex.: telefone mudou para (43) 3333-0000; fechou; endereço certo é..."></textarea></label>
+    <label class="campo"><span>Seu nome</span><input name="autor" required maxlength="80" autocomplete="name"></label>
+    <label class="pote" aria-hidden="true">Não preencha<input name="site" tabindex="-1" autocomplete="off"></label>
+    <p class="retorno" role="status" hidden></p>
+    <div class="botoes"><button class="botao" type="button" data-fechar>Cancelar</button><button class="botao cheio" type="submit">Enviar correção</button></div>
+  </form>
+</dialog>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script src="config.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="pt-BR">
+<meta charset="utf-8">
+<!-- Gera assets/og-image.png (1200x630) e, com #icone, o ícone quadrado (512x512). Tire a captura no navegador. -->
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@700&family=Pixelify+Sans:wght@700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../style.css">
+<style>
+  html, body { margin: 0; padding: 0; }
+  body { width: 1200px; height: 630px; overflow: hidden; background-size: 300px; }
+  img { image-rendering: pixelated; }
+  body.icone { width: 512px; height: 512px; background: none; }
+  body.icone .og { display: none; }
+  body:not(.icone) .so-icone { display: none; }
+  .so-icone img { width: 512px; height: 512px; display: block; }
+  .og { position: absolute; inset: 0; padding: 56px 64px; }
+  .planeta-og { position: absolute; right: 70px; top: 60px; width: 288px; height: 288px; }
+  .mascote-og { position: absolute; right: 330px; top: 300px; width: 160px; height: 160px; }
+  h1 { margin: 0; font-family: "Pixelify Sans"; font-size: 62px; line-height: 1.05; color: #fbf7ec; max-width: 760px; }
+  .grande { margin: 34px 0 0; font-family: "Pixelify Sans"; font-size: 104px; line-height: 0.95; color: #ffd23f; max-width: 700px; }
+  .lema-og { position: absolute; left: 64px; bottom: 56px; margin: 0; font-family: "Atkinson Hyperlegible"; font-weight: 700; font-size: 34px; color: #fbf7ec; background: #2a2163; border-left: 12px solid #ffd23f; padding: 16px 26px; }
+</style>
+<body>
+<div class="og">
+  <h1>Guia do Extensionista das Galáxias</h1>
+  <p class="grande">Não entre em pânico</p>
+  <img class="planeta-og" src="../assets/logo.svg" alt="" style="background:none">
+  <img class="mascote-og" src="../assets/mascote.svg" alt="">
+  <p class="lema-og">Onde dormir, comer e abastecer no Paraná</p>
+</div>
+<div class="so-icone"><img src="../assets/logo.svg" alt=""></div>
+<script>if (location.hash === "#icone") document.body.classList.add("icone");</script>
+</body>
+</html>
