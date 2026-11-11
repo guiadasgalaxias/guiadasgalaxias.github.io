@@ -107,6 +107,8 @@ function doPost(e) {
     const autor = limpa(d.autor, 80);
     if (!autor) throw new Error("informe seu nome");
     const agora = new Date();
+    // Texto em horário de Brasília: não depende do fuso configurado na planilha.
+    const quando = Utilities.formatDate(agora, "America/Sao_Paulo", "yyyy-MM-dd HH:mm:ss");
     let aba;
     let registro;
 
@@ -123,21 +125,21 @@ function doPost(e) {
       if (!wa && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) throw new Error("informe WhatsApp ou e-mail");
       if (d.t === "hotel" && !d.ok) throw new Error("só entram hotéis cujo valor cabe na diária");
       aba = "lugares";
-      registro = { quando: agora, status: "pendente", id: "c" + Utilities.getUuid().slice(0, 8), t: d.t, n, e: end, m, tel, wa, email,
+      registro = { quando, status: "pendente", id: "c" + Utilities.getUuid().slice(0, 8), t: d.t, n, e: end, m, tel, wa, email,
         ok: d.ok ? 1 : "", valor: limpa(d.valor, 12), almoco: d.almoco ? 1 : "", jantar: d.jantar ? 1 : "", proximos: limpa(d.proximos, 200), autor };
     } else if (d.tipo === "avaliacao") {
       const id = limpa(d.id, 40);
       if (!/^[a-z0-9]+$/i.test(id)) throw new Error("lugar inválido");
       if (!/^\d{4}-\d{2}-\d{2}$/.test(d.data) || new Date(d.data) > agora) throw new Error("data inválida");
       aba = "avaliacoes";
-      registro = { quando: agora, status: "pendente", id, autor, data: d.data, limpeza: nota(d.limpeza), atendimento: nota(d.atendimento),
+      registro = { quando, status: "pendente", id, autor, data: d.data, limpeza: nota(d.limpeza), atendimento: nota(d.atendimento),
         conforto: nota(d.conforto), preco: nota(d.preco), ok: d.ok ? 1 : "", comentario: limpa(d.comentario, 500), remover: d.remover ? "SIM" : "" };
     } else if (d.tipo === "correcao") {
       const id = limpa(d.id, 40);
       const texto = limpa(d.texto, 600);
       if (!/^[a-z0-9]+$/i.test(id) || !texto) throw new Error("correção vazia");
       aba = "correcoes";
-      registro = { quando: agora, status: "pendente", id, texto, autor };
+      registro = { quando, status: "pendente", id, texto, autor };
     } else {
       throw new Error("tipo de envio desconhecido");
     }
