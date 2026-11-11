@@ -233,6 +233,12 @@ def main() -> int:
     lugares = [l for l in lugares if l["n"].strip()]  # sem nome não dá para indicar
     lugares = [l for l in lugares if not re.search(r"\bmot[eé]l\b", l["n"], re.I)]  # motel não é parada de viagem a serviço
     assert len({l["id"] for l in lugares}) == len(lugares), "ids duplicados"
+    # Correções de colegas já conferidas (build/correcoes.json): tira lugares e ajusta campos da base.
+    correcoes = json.loads((ROOT / "build" / "correcoes.json").read_text(encoding="utf-8"))
+    ids = {l["id"] for l in lugares}
+    sobrando = (set(correcoes["remover"]) | set(correcoes["ajustar"])) - ids
+    assert not sobrando, f"correcoes.json cita ids que não existem: {sobrando}"
+    lugares = [{**l, **correcoes["ajustar"].get(l["id"], {})} for l in lugares if l["id"] not in correcoes["remover"]]
 
     OUT.mkdir(exist_ok=True)
     for nome, dados in (("municipios.json", municipios), ("lugares.json", lugares)):

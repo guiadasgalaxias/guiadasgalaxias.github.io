@@ -1,0 +1,17 @@
+{
+  "remover": {
+    "on4604236489": "duplicata do Garda Hotel (fica ow1469117531)",
+    "ow728236336": "Sandro Hotel virou Hotel Marechal Express (hde9fab0ac8)",
+    "ow728717443": "Point' Restaurante não existe mais",
+    "p1302167119": "Posto Paraíso, Carlópolis: não abastece mais Prime",
+    "p1302162206": "Posto Mazoti, Joaquim Távora: não abastece mais Prime",
+    "p1302162967": "Posto Novo Horizonte, Cândido de Abreu: não passa cartão Prime"
+  },
+  "ajustar": {
+    "hde9fab0ac8": {"lat": -25.40653, "lon": -52.41336},
+    "on6292881086": {"e": "Rua Coronel Guilherme de Paula, 1470, Centro", "lat": -25.4043, "lon": -52.41628},
+    "ow1030377495": {"e": "Rua Dom Pedro I, 554, Centro", "lat": -24.26951, "lon": -53.84511},
+    "on3506851683": {"e": "Rua 24 de Julho, 1749, Jequitibá"},
+    "p1302169133": {"e": "Avenida Yolanda Loureiro de Carvalho, 1030, Centro, Ubiratã"}
+  }
+}
